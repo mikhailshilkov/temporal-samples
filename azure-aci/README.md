@@ -69,15 +69,15 @@ The example uses [Pulumi](https://www.pulumi.com) to deploy several Temporal com
     +   ├─ random:index:RandomPassword                               mysql-password          created  
     +   └─ azure-nextgen:resources/latest:ResourceGroup              rg                      created  
  
-Outputs:
-    serverEndpoint : "21.55.179.245:7233"
-    starterEndpoint: "http://21.55.177.186:8080/async?name="
-    webEndpoint    : "http://52.136.6.198:8088"
+    Outputs:
+        serverEndpoint : "21.55.179.245:7233"
+        starterEndpoint: "http://21.55.177.186:8080/async?name="
+        webEndpoint    : "http://52.136.6.198:8088"
 
-Resources:
-    + 13 created
+    Resources:
+        + 13 created
 
-Duration: 7m48s
+    Duration: 7m48s
     ```
 
 1.  Start a workflow:
