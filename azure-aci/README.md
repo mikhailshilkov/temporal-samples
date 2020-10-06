@@ -84,7 +84,7 @@ The example uses [Pulumi](https://www.pulumi.com) to deploy several Temporal com
 
     ```
     $ pulumi stack output starterEndpoint
-    http://20.54.177.186:8080/async?name=
+    http://21.55.177.186:8080/async?name=
     $ curl $(pulumi stack output starterEndpoint)World
     Started workflow ID=World, RunID=b4f6db00-bb2f-498b-b620-caad81c91a81% 
     ```
@@ -93,5 +93,5 @@ The example uses [Pulumi](https://www.pulumi.com) to deploy several Temporal com
 
     ```
     $ pulumi stack output webEndpoint
-    http://51.137.6.198:8088 # Open in your browser
+    http://52.136.6.198:8088 # Open in your browser
     ```
