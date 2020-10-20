@@ -49,12 +49,12 @@ export class MySql extends pulumi.ComponentResource {
             },
         }, {parent: this});
         
-        new mysql.FirewallRule("mysql-allow-all", {
+        new mysql.FirewallRule("mysql-allow-azure", {
             resourceGroupName: args.resourceGroupName,
             serverName: mySQL.name,
-            firewallRuleName: "allow-all",
+            firewallRuleName: "allow-azure",
             startIpAddress: "0.0.0.0",
-            endIpAddress: "255.255.255.255",
+            endIpAddress: "0.0.0.0",
         }, {parent: this});
 
         this.hostName = mySQL.fullyQualifiedDomainName.apply(v => v!);
