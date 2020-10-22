@@ -19,7 +19,7 @@ const database = new MySql("mysql", {
 const temporal = new Temporal("temporal", {
     resourceGroupName: resourceGroup.name,
     location: resourceGroup.location,
-    version: "1.0.0",
+    version: "1.1.1",
     storage: {
         type: "mysql",
         hostName: database.hostName,
