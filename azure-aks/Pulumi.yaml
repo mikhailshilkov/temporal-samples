@@ -1,0 +1,3 @@
+name: tempora-azure-aks
+runtime: nodejs
+description: A minimal Azure AKS TypeScript Pulumi program to provision a Temporal cluster
