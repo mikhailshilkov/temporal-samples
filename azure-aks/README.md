@@ -1,57 +1,96 @@
 [![Deploy](https://get.pulumi.com/new/button.svg)](https://app.pulumi.com/new)
 
-# Azure Kubernetes Service (AKS) Cluster using Azure Next Generation Provider
+# Deploy a Temporal application to Azure Kubernetes Service (AKS)
 
-This example deploys an AKS cluster, creates an Azure Active AD application, creates a Service Principal and sets credentials to manage access to the cluster.
+Starting point for building an instance of Temporal Server and Workflows in AKS.
 
-## Deploying the App
+The example uses [Pulumi](https://www.pulumi.com) to deploy several Temporal components to Azure managed services:
 
-To deploy your infrastructure, follow the below steps.
+- New Azure Resource Group
+- Azure MySQL Database for storage
+- Azure AD Service Principal and SSH Key
+- Azure Kubernetes Service (AKS) cluster
+- Azure Container Registry with a role assignment for the AKS SP
+- Docker image with a sample workflow implementation
+- Temporal Server as a deployment and a ClusterIP service
+- Temporal Web Console as a deployment and a ClusterIP service
+- Temporal Worker and HTTP server to start workflows
 
-### Prerequisites
+## Running the App
 
-1. [Install Pulumi](https://www.pulumi.com/docs/get-started/install/)
-2. [Install node.js](https://nodejs.org/en/download/)
-3. [Configure Azure Credentials](https://www.pulumi.com/docs/intro/cloud-providers/azure/setup/)
+1.  Create a new stack:
 
-### Steps
-
-After cloning this repo, from this working directory, run these commands:
-
-1. Create a new stack, which is an isolated deployment target for this example:
-
-    ```bash
+    ```
     $ pulumi stack init dev
     ```
 
-1. Next, install the dependencies:
+1.  Login to Azure CLI (you will be prompted to do this during deployment if you forget this step):
 
-    ```bash
+    ```
+    $ az login
+    ```
+
+1.  Restore NPM dependencies:
+
+    ```
     $ npm install
     ```
 
-1. Stand up the cluster by invoking pulumi
-    ```bash
+1.  Run `pulumi up` to preview and deploy changes:
+
+    ```
     $ pulumi up
+         Type                                                        Name                    Status      
+    +   pulumi:pulumi:Stack                                         tempora-azure-aks-dev   created     
+    +   ├─ my:example:MySql                                         mysql                   created     
+    +   │  ├─ azure-nextgen:dbformysql/latest:Server                mysql                   created     
+    +   │  └─ azure-nextgen:dbformysql/latest:FirewallRule          mysql-allow-azure       created     
+    +   ├─ my:example:Temporal                                      temporal                created     
+    +   │  ├─ docker:image:Image                                    temporal-worker         created     
+    +   │  ├─ azure-nextgen:containerregistry/latest:Registry       registry                created     
+    +   │  ├─ azure-nextgen:authorization/latest:RoleAssignment     access-from-cluster     created     
+    +   │  ├─ pulumi:providers:kubernetes                           k8s-provider            created     
+    +   │  ├─ kubernetes:core/v1:Namespace                          temporal-ns             created     
+    +   │  ├─ kubernetes:core/v1:Secret                             temporal-default-store  created     
+    +   │  ├─ kubernetes:apps/v1:Deployment                         temporal-web            created     
+    +   │  ├─ kubernetes:apps/v1:Deployment                         workflow-app            created     
+    +   │  ├─ kubernetes:apps/v1:Deployment                         temporal-worker         created     
+    +   │  ├─ kubernetes:core/v1:Service                            temporal-web            created     
+    +   │  ├─ kubernetes:core/v1:Service                            temporal-worker         created     
+    +   │  └─ kubernetes:core/v1:Service                            workflow-app            created     
+    +   ├─ my:example:AksCluster                                    aks                     created     
+    +   │  ├─ random:index:RandomPassword                           password                created     
+    +   │  ├─ tls:index:PrivateKey                                  ssh-key                 created     
+    +   │  ├─ azuread:index:ServicePrincipal                        aksSp                   created     
+    +   │  ├─ azuread:index:ServicePrincipalPassword                aksSpPassword           created     
+    +   │  └─ azure-nextgen:containerservice/latest:ManagedCluster  managedCluster          created     
+    +   ├─ azuread:index:Application                                aks                     created     
+    +   ├─ random:index:RandomString                                resourcegroup-name      created     
+    +   ├─ random:index:RandomPassword                              mysql-password          created     
+    +   └─ azure-nextgen:resources/latest:ResourceGroup             resourceGroup           created     
+    
+    Outputs:
+        starterEndpoint: "http://21.55.177.186:8080/async?name="
+        webEndpoint    : "http://52.136.6.198:8088"
+
+    Resources:
+        + 27 created
+
+    Duration: 6m46s
     ```
 
-1. After 3-4 minutes, your cluster will be ready, and the kubeconfig YAML you'll use to connect to the cluster will be available as an output. You can save this kubeconfig to a file like so:
+1.  Start a workflow:
 
-    ```bash
-    $ pulumi stack output kubeconfig > kubeconfig.yaml
+    ```
+    $ pulumi stack output starterEndpoint
+    http://21.55.177.186:8080/async?name=
+    $ curl $(pulumi stack output starterEndpoint)World
+    Started workflow ID=World, RunID=b4f6db00-bb2f-498b-b620-caad81c91a81% 
     ```
 
-    Once you have this file in hand, you can interact with your new cluster as usual via `kubectl`:
+1. Navigate to Temporal Web console:
 
-    ```bash
-    $ KUBECONFIG=./kubeconfig.yaml kubectl get nodes
     ```
-
-1. From there, feel free to experiment. Simply making edits and running `pulumi up` will incrementally update your stack.
-
-1. Once you've finished experimenting, tear down your stack's resources by destroying and removing it:
-
-    ```bash
-    $ pulumi destroy --yes
-    $ pulumi stack rm --yes
+    $ pulumi stack output webEndpoint
+    http://52.136.6.198:8088 # Open in your browser
     ```
