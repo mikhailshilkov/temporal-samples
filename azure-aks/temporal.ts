@@ -1,5 +1,6 @@
 import * as docker from "@pulumi/docker"
 import * as pulumi from "@pulumi/pulumi";
+import * as random from "@pulumi/random"
 import * as kubernetes from "@pulumi/kubernetes";
 
 import * as authorization from "@pulumi/azure-nextgen/authorization/latest";
@@ -68,12 +69,13 @@ export class Temporal extends pulumi.ComponentResource {
             },
         }, { parent: this });
         
+        const roleName = new random.RandomUuid("role-name");        
         new authorization.RoleAssignment("access-from-cluster", {
             properties: {
                 principalId: args.cluster.principalId,
                 roleDefinitionId: "/subscriptions/0282681f-7a9e-424b-80b2-96babd57a8a1/providers/Microsoft.Authorization/roleDefinitions/7f951dda-4ed3-4680-a7ca-43fe172d538d",
             },
-            roleAssignmentName: "7f951dda-4ed3-4680-a7ca-43fe172d538d",
+            roleAssignmentName: roleName.result,
             scope: registry.id,
         }, { parent: this });
         
@@ -82,11 +84,14 @@ export class Temporal extends pulumi.ComponentResource {
         }, { parent: this });
         
         const k8sOptions = { provider: provider, parent: this };
-        const namespace = new kubernetes.core.v1.Namespace("temporal-ns", {
-            metadata: {
-                name: args.app.namespace,
-            },
-        }, k8sOptions);
+
+        if (args.app.namespace != "default") {
+            new kubernetes.core.v1.Namespace("temporal-ns", {
+                metadata: {
+                    name: args.app.namespace,
+                },
+            }, k8sOptions);
+        }
         
         const temporalDefaultStorePassword = new kubernetes.core.v1.Secret("temporal-default-store", {
             metadata: {
@@ -133,7 +138,7 @@ export class Temporal extends pulumi.ComponentResource {
                         containers: [
                             {
                                 name: "temporal-worker",
-                                image: "temporalio/auto-setup:1.1.0",
+                                image: `temporalio/auto-setup:${args.version}`,
                                 imagePullPolicy: "IfNotPresent",
                                 env: [
                                     {
@@ -243,7 +248,7 @@ export class Temporal extends pulumi.ComponentResource {
                         containers: [
                             {
                                 name: "temporal-web",
-                                image: "temporalio/web:1.1.0",
+                                image: `temporalio/web:${args.version}`,
                                 imagePullPolicy: "IfNotPresent",
                                 env: [
                                     {
